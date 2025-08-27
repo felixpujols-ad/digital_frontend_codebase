@@ -31,7 +31,7 @@ export default defineConfig({
 
     reporter: 'cypress-mochawesome-reporter',
     reporterOptions: {
-      reportDir: 'cypress/reports/html',
+      reportDir: 'cypress/reports/',
       charts: true,
       reportPageTitle: 'Reporte de Pruebas Automatizadas',
       embeddedScreenshots: true,
