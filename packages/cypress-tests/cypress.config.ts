@@ -28,10 +28,25 @@ export default defineConfig({
         },
       },
     },
+
+    reporter: 'cypress-mochawesome-reporter',
+    reporterOptions: {
+      reportDir: 'cypress/reports/html',
+      charts: true,
+      reportPageTitle: 'Reporte de Pruebas Automatizadas',
+      embeddedScreenshots: true,
+      inlineAssets: true,
+      saveAllAttempts: false,
+    },
+
     async setupNodeEvents(
       on: Cypress.PluginEvents,
       config: Cypress.PluginConfigOptions,
     ): Promise<Cypress.PluginConfigOptions> {
+      
+      // ✅ Línea necesaria para inicializar el reportero
+      require('cypress-mochawesome-reporter/plugin')(on);
+
       await addCucumberPreprocessorPlugin(on, config)
 
       const siteKey = config.env.site || 'home_unificado'
@@ -64,6 +79,8 @@ export default defineConfig({
     defaultCommandTimeout: 10000,
   },
 })
+
+// Esta función estaba en tu archivo original, la mantengo aquí
 function installRealEvents(on: Cypress.PluginEvents) {
   throw new Error('Function not implemented.')
 }

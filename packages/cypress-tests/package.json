@@ -36,6 +36,7 @@
     "contentstack": "^3.24.3",
     "cypress": "^14.5.4",
     "cypress-axe": "^1.5.0",
+    "cypress-mochawesome-reporter": "^3.8.4",
     "cypress-real-events": "^1.14.0",
     "esbuild": "^0.25.0",
     "install": "^0.13.0",
