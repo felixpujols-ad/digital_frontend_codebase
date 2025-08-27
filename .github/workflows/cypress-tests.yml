@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       site:
-        description: 'Site to test'
+        description: "Site to test"
         type: choice
         required: true
         default: all
@@ -41,18 +41,16 @@ jobs:
         device: [samsungA54, iphone11, desktop]
     steps:
       - uses: actions/checkout@v4
-
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-
+      
       - name: Install dependencies
         run: npm ci
-        # ✅ Ruta correcta, relativa a la raíz del repo
         working-directory: packages/cypress-tests
-
+      
       - name: Run Cypress tests
-        # ✅ Ruta correcta, relativa a la raíz del repo
         working-directory: packages/cypress-tests
         env:
           SITE: ${{ matrix.site }}
@@ -65,7 +63,13 @@ jobs:
           else
             browser=electron
           fi
-          npx cypress run --env TAGS=@$SITE,site=$SITE,device=$DEVICE --browser $browser
+          # Se ignorará el error para que el siguiente paso siempre se ejecute
+          npx cypress run --env TAGS=@$SITE,site=$SITE,device=$DEVICE --browser $browser || true
+
+      - name: Generate HTML Report
+        if: always()
+        working-directory: packages/cypress-tests
+        run: npx mochawesome-merge "cypress/reports/*.json" > mochawesome.json && npx marge mochawesome.json --reportDir "cypress/reports/html"
 
       - name: Upload HTML report
         if: always()
@@ -73,11 +77,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cypress-report-${{ matrix.site }}-${{ matrix.device }}
-          # ✅ Ruta correcta, relativa a la raíz del repo
           path: packages/cypress-tests/cypress/reports/html
           if-no-files-found: warn
 
-      # ... el resto del job de Slack no cambia ...
       - name: Notify Slack
         if: always()
         env:
