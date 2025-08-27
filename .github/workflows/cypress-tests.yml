@@ -102,7 +102,7 @@ jobs:
           fi
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"${icon} Tests ${result} for ${SITE} on ${DEVICE}: ${ARTIFACT_URL}\"}" \
-            "https://hooks.slack.com/services/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"
+            "https://hooks.slack.com/services/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"
 
       # 👇 Paso final: falla el job si hubo tests fallidos
       - name: Fail job if tests failed
