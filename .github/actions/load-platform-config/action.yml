@@ -1,0 +1,76 @@
+name: 'Load Platform Environment Config'
+description: 'Loads variables that do not depend on the app config path'
+
+inputs:
+  apigee_url:
+    description: 'Base Apigee URL'
+    required: true
+  assistant_apigee_key:
+    description: 'Apigee assistant key'
+    required: true
+  assistant_aes_ruc_key:
+    description: 'RUC encryption key'
+    required: true
+  apigee_client_secret:
+    description: 'Apigee client secret'
+    required: true
+  runner_group:
+    description: 'GitHub Actions runner group'
+    required: true
+
+outputs:
+  environment:
+    description: 'Short environment identifier used in app config (e.g., Development, QA, Production).'
+    value: ${{ steps.set-vars.outputs.environment }}
+  k8s_env:
+    description: 'Short environment identifier used in app config (e.g., dev, qa, prd).'
+    value: ${{ steps.set-vars.outputs.k8s_env }}
+  runner_group:
+    description: 'The GitHub runner group to use for the environment.'
+    value: ${{ steps.set-vars.outputs.runner_group }}
+  apigee_url:
+    description: 'The base URL for Apigee used in deployments.'
+    value: ${{ steps.set-vars.outputs.apigee_url }}
+  assistant_apigee_key:
+    description: 'The public API key for Apigee integration.'
+    value: ${{ steps.set-vars.outputs.assistant_apigee_key }}
+  assistant_aes_ruc_key:
+    description: 'The AES key for encrypted communication with the RUC service.'
+    value: ${{ steps.set-vars.outputs.assistant_aes_ruc_key }}
+  apigee_client_encoded_base64:
+    description: 'The base64-encoded secret used to authenticate with Apigee.'
+    value: ${{ steps.set-vars.outputs.apigee_client_encoded_base64 }}
+runs:
+  using: 'composite'
+  steps:
+    - id: set-vars
+      shell: bash
+      run: |
+        BRANCH="${GITHUB_REF#refs/heads/}"
+
+        case "$BRANCH" in
+          develop) ENVIRONMENT="Development" ;;
+          qa) ENVIRONMENT="QA" ;;
+          main) ENVIRONMENT="Production" ;;
+          *) echo "Unsupported branch: $BRANCH" && exit 1 ;;
+        esac
+
+        case "$ENVIRONMENT" in
+          Development) K8S_ENV="dev" ;;
+          QA)          K8S_ENV="qa" ;;
+          Production)  K8S_ENV="pro" ;;
+        esac
+
+        echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+        echo "k8s_env=$K8S_ENV" >> $GITHUB_OUTPUT
+        echo "runner_group=$RUNNER_GROUP" >> $GITHUB_OUTPUT
+        echo "apigee_url=$APIGEE_URL" >> $GITHUB_OUTPUT
+        echo "assistant_apigee_key=$ASSISTANT_APIGEE_KEY" >> $GITHUB_OUTPUT
+        echo "assistant_aes_ruc_key=$ASSISTANT_AES_RUC_KEY" >> $GITHUB_OUTPUT
+        echo "apigee_client_encoded_base64=$(echo ${APIGEE_CLIENT_SECRET} | base64 -w0)" >> $GITHUB_OUTPUT
+      env:
+        RUNNER_GROUP: ${{ inputs.runner_group }}
+        APIGEE_URL: ${{ inputs.apigee_url }}
+        ASSISTANT_APIGEE_KEY: ${{ inputs.assistant_apigee_key }}
+        ASSISTANT_AES_RUC_KEY: ${{ inputs.assistant_aes_ruc_key }}
+        APIGEE_CLIENT_SECRET: ${{ inputs.apigee_client_secret }}

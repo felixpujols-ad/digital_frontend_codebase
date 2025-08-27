@@ -1,0 +1,59 @@
+{
+  "name": "@liverpool-apps/cypress-tests",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf node_modules && rm -rf .turbo && rm -rf dist",
+    "open": "cypress open --e2e",
+    "test": "cypress run",
+    "clean-reports": "rimraf results/*",
+    "merge-reports": "jrm results/test-results-report.xml \"results/*.xml\"",
+    "test:home_unificado:desktop": "cypress run --env TAGS=@home_unificado,site=home_unificado,device=desktop --browser firefox",
+    "test:home_unificado:iphone11": "cypress run --env TAGS=@home_unificado,site=home_unificado,device=iphone11 --browser electron",
+    "open:home_unificado:desktop": "cypress open --e2e --env TAGS=@home_unificado,site=home_unificado,device=desktop --browser firefox",
+    "open:home_unificado:iphone11": "cypress open --e2e --env TAGS=@home_unificado,site=home_unificado,device=iphone11 --browser electron",
+    "test:blpcdpplp:desktop": "cypress run --env TAGS=@blpcdpplp,site=blpcdpplp,device=desktop --browser firefox",
+    "test:blpcdpplp:iphone11": "cypress run --env TAGS=@blpcdpplp,site=blpcdpplp,device=iphone11 --browser electron",
+    "test:blankpage:desktop": "cypress run --env TAGS=@blankpage,site=blankpage,device=desktop --browser firefox",
+    "test:blankpage:iphone11": "cypress run --env TAGS=@blankpage,site=blankpage,device=iphone11 --browser electron",
+    "open:blpcdpplp:desktop": "cypress open --e2e --env TAGS=@blpcdpplp,site=blpcdpplp,device=desktop --browser firefox",
+    "open:blpcdpplp:iphone11": "cypress open --e2e --env TAGS=@blpcdpplp,site=blpcdpplp,device=iphone11 --browser electron",
+    "open:blankpage:desktop": "cypress open --e2e --env TAGS=@blankpage,site=blankpage,device=desktop --browser firefox",
+    "open:blankpage:iphone11": "cypress open --e2e --env TAGS=@blankpage,site=blankpage,device=iphone11 --browser electron",
+    "test:checkout:desktop": "cypress run --env TAGS=@checkout,site=checkout,device=desktop --browser firefox",
+    "test:checkout:iphone11": "cypress run --env TAGS=@checkout,site=checkout,device=iphone11 --browser electron",
+    "open:checkout:desktop": "cypress open --e2e --env TAGS=@checkout,site=checkout,device=desktop --browser firefox",
+    "open:checkout:iphone11": "cypress open --e2e --env TAGS=@checkout,site=checkout,device=iphone11 --browser electron"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "^21.0.2",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.3",
+    "axe-core": "^4.10.2",
+    "contentstack": "^3.24.3",
+    "cypress": "^14.5.4",
+    "cypress-axe": "^1.5.0",
+    "cypress-real-events": "^1.14.0",
+    "esbuild": "^0.25.0",
+    "install": "^0.13.0",
+    "junit-report-merger": "^7.0.0",
+    "mochawesome": "^7.1.3",
+    "npm-run-all": "^4.1.5",
+    "playwright-webkit": "^1.48.2"
+  },
+  "cypress-cucumber-preprocessor": {
+    "html": {
+      "enabled": true
+    },
+    "stepDefinitions": [
+      "cypress/e2e/steps/**/*.{js,ts}",
+      "cypress/e2e/steps/common/**/*.{js,ts}",
+      "cypress/api/steps/**/*.{js,ts}"
+    ],
+    "filterSpecs": true,
+    "omitFiltered": true
+  }
+}

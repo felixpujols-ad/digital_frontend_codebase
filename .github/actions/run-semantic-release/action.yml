@@ -1,0 +1,12 @@
+name: Run Semantic Release
+
+description: 'Runs Semantic Release to handle versioning and publishing'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Semantic Release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: pnpm exec semantic-release

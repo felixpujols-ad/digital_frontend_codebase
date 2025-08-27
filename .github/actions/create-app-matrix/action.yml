@@ -1,0 +1,88 @@
+name: Create Matrix from Projects
+description: 'Generates full matrix JSON from environment variable Projects'
+
+inputs:
+  k8s_env:
+    description: 'Short K8S env (dev, qa, prd)'
+    required: true
+
+outputs:
+  matrix:
+    description: 'Serialized matrix JSON with full app data'
+    value: ${{ steps.set-matrix.outputs.matrix }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get changed files on apps directory
+      id: changed-files
+      shell: bash
+      run: |
+        APPS_DIR="apps"
+        PACKAGE_DIR="packages"
+        EXCLUDE_DIR="common"
+
+        git diff --name-only --diff-filter=ACMR HEAD~1 HEAD > modified_files.txt
+        echo "Modified files:"
+        cat modified_files.txt
+
+        # Check if any file in packages/ was changed
+        # Define patterns that, if matched, should trigger including all apps
+        INCLUDE_ALL_APPS_PATTERNS=("^${PACKAGE_DIR}/")
+
+        INCLUDE_ALL_APPS=false
+        for pattern in "${INCLUDE_ALL_APPS_PATTERNS[@]}"; do
+          if grep -q "$pattern" modified_files.txt; then
+            INCLUDE_ALL_APPS=true
+            break
+          fi
+        done
+
+        if [ "$INCLUDE_ALL_APPS" = true ]; then
+          echo "::notice:: Changes detected in ${PACKAGE_DIR}/, including all apps in ${APPS_DIR}/ (excluding ${EXCLUDE_DIR})"
+          DIRS=$(find "$APPS_DIR" -mindepth 1 -maxdepth 1 -type d ! -name "$EXCLUDE_DIR" -exec basename {} \; | sort -u)
+        else
+          DIRS=$(awk -F/ -v a="$APPS_DIR" -v ex="$EXCLUDE_DIR" \
+          '$1==a && $2!=ex && $2!="" {print $2}' modified_files.txt | sort -u)
+        fi
+
+        # if empty, end with a clear message and output an empty array
+        if [ -z "$DIRS" ]; then
+          echo "::notice:: No apps under ./${APPS_DIR} (excluding ./${APPS_DIR}/${EXCLUDE_DIR}) were modified."
+          echo "apps_json=[]" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        apps_json=$(printf '%s\n' $DIRS | jq -R '{name: ., path: ("./k8s/" + . + "/app.config.yaml")}' | jq -cs '.')
+        echo "apps_json=$apps_json" >> $GITHUB_OUTPUT
+
+    - name: Generate matrix from app.config.yaml files
+      id: set-matrix
+      shell: bash
+      run: |
+        matrix=()
+        for project in $(echo '${{ steps.changed-files.outputs.apps_json }}' | yq -oj '.[] | @json' -r); do
+          name=$(echo "$project" | jq -r '.name')
+          path=$(echo "$project" | jq -r '.path')
+
+          config=$(yq -o=json "$path")
+
+          app_name=$(echo "$config" | jq -r '.spec.app_name')
+          namespace=$(echo "$config" | jq -r ".spec.environments.${{ inputs.k8s_env }}.namespace")
+          chart=$(echo "$config" | jq -r '.spec.chart')
+          chart_version=$(echo "$config" | jq -r ".spec.environments.${{ inputs.k8s_env }}.chart_version")
+          helm_values=$(echo "$config" | jq -r ".spec.environments.${{ inputs.k8s_env }}.values" | jq 'join(",")')
+
+          matrix+=("$(jq -n \
+            --arg name "$name" \
+            --arg path "$path" \
+            --arg app_name "$app_name" \
+            --arg namespace "$namespace" \
+            --arg chart "$chart" \
+            --arg chart_version "$chart_version" \
+            --arg helm_values "$helm_values" \
+            '{name: $name, path: $path, app_name: $app_name, namespace: $namespace, chart: $chart, chart_version: $chart_version, helm_values: $helm_values}')")
+        done
+
+        matrix_json=$(printf '%s\n' "${matrix[@]}" | jq -cs '.')
+        echo "matrix=$matrix_json" >> $GITHUB_OUTPUT

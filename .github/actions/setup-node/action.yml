@@ -1,0 +1,12 @@
+name: Setup Node.js
+
+description: 'Sets up Node.js environment'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22.6.0'
+        cache: 'pnpm'
