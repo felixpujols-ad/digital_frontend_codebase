@@ -41,16 +41,16 @@ jobs:
         device: [samsungA54, iphone11, desktop]
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      
+
       - name: Install dependencies
         run: npm ci
         working-directory: packages/cypress-tests
-      
       - name: Run Cypress tests
+        id: cypress
         working-directory: packages/cypress-tests
         env:
           SITE: ${{ matrix.site }}
@@ -63,15 +63,20 @@ jobs:
           else
             browser=electron
           fi
-          # Se ignorará el error para que el siguiente paso siempre se ejecute
-          npx cypress run --env TAGS=@$SITE,site=$SITE,device=$DEVICE --browser $browser || true
+
+          # Ejecuta Cypress pero NO rompas el job todavía
+          set +e
+          npx cypress run --env TAGS=@$SITE,site=$SITE,device=$DEVICE --browser $browser
+          EC=$?
+          set -e
+          echo "exit_code=$EC" >> "$GITHUB_OUTPUT"
 
       - name: Generate HTML Report
         if: always()
         working-directory: packages/cypress-tests
         run: |
-          npx mochawesome-merge "cypress/reports/.jsons/*.json" > mochawesome.json
-          npx marge mochawesome.json --reportDir "cypress/reports/html"
+          npx mochawesome-merge "cypress/reports/.jsons/*.json" > mochawesome-merged.json
+          npx marge mochawesome-merged.json --reportDir "cypress/reports/html"
 
       - name: Upload HTML report
         if: always()
@@ -86,17 +91,20 @@ jobs:
         if: always()
         env:
           ARTIFACT_URL: ${{ steps.upload-report.outputs.artifact-url }}
-          JOB_STATUS: ${{ job.status }}
+          EXIT_CODE: ${{ steps.cypress.outputs.exit_code }}
           SITE: ${{ matrix.site }}
           DEVICE: ${{ matrix.device }}
         run: |
-          if [ "$JOB_STATUS" = "success" ]; then
-            icon=":white_check_mark:"
-            result="passed"
+          if [ "$EXIT_CODE" = "0" ]; then
+            icon=":white_check_mark:"; result="passed"
           else
-            icon=":x:"
-            result="failed"
+            icon=":x:"; result="failed"
           fi
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"${icon} Tests ${result} for ${SITE} on ${DEVICE}: ${ARTIFACT_URL}\"}" \
-            https://hooks.slack.com/services/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
+            "https://hooks.slack.com/services/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"
+
+      # 👇 Paso final: falla el job si hubo tests fallidos
+      - name: Fail job if tests failed
+        if: always() && steps.cypress.outputs.exit_code != '0'
+        run: exit 1
