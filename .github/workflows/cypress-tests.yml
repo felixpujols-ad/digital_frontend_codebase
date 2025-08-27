@@ -69,7 +69,9 @@ jobs:
       - name: Generate HTML Report
         if: always()
         working-directory: packages/cypress-tests
-        run: npx mochawesome-merge "cypress/reports/*.json" > mochawesome.json && npx marge mochawesome.json --reportDir "cypress/reports/html"
+        run: |
+          npx mochawesome-merge "cypress/reports/.jsons/*.json" > mochawesome.json
+          npx marge mochawesome.json --reportDir "cypress/reports/html"
 
       - name: Upload HTML report
         if: always()
