@@ -40,7 +40,7 @@ jobs:
         site: ${{ fromJSON(needs.set-matrix.outputs.sites) }}
         device: [samsungA54, iphone11, desktop]
 
-    # 👇 Default working directory for all `run:` steps in this job
+    # ✅ Only change: set default working directory for all run steps in this job
     defaults:
       run:
         working-directory: packages/cypress-tests
@@ -69,7 +69,7 @@ jobs:
             browser=electron
           fi
 
-          # Run Cypress but DO NOT fail the job yet
+          # Ejecuta Cypress pero NO rompas el job todavía
           set +e
           npx cypress run --env TAGS=@$SITE,site=$SITE,device=$DEVICE --browser $browser
           EC=$?
@@ -77,14 +77,14 @@ jobs:
           echo "exit_code=$EC" >> "$GITHUB_OUTPUT"
 
       - name: Generate HTML Report
-        if: ${{ always() }}
+        if: always()
         run: |
           npx mochawesome-merge "cypress/reports/.jsons/*.json" > mochawesome-merged.json
           npx marge mochawesome-merged.json --reportDir "cypress/reports/html"
 
-      # Note: defaults.run doesn't affect action inputs; keep repo-root path here
+      # Note: action inputs still use repo-root paths
       - name: Upload HTML report
-        if: ${{ always() }}
+        if: always()
         id: upload-report
         uses: actions/upload-artifact@v4
         with:
@@ -93,7 +93,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Notify Slack
-        if: ${{ always() }}
+        if: always()
         env:
           ARTIFACT_URL: ${{ steps.upload-report.outputs.artifact-url }}
           EXIT_CODE: ${{ steps.cypress.outputs.exit_code }}
@@ -111,5 +111,5 @@ jobs:
             "$SLACK_WEBHOOK_URL"
 
       - name: Fail job if tests failed
-        if: ${{ always() && steps.cypress.outputs.exit_code != '0' }}
+        if: always() && steps.cypress.outputs.exit_code != '0'
         run: exit 1
