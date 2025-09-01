@@ -40,7 +40,6 @@ jobs:
         site: ${{ fromJSON(needs.set-matrix.outputs.sites) }}
         device: [samsungA54, iphone11, desktop]
 
-    # ✅ Only change: set default working directory for all run steps in this job
     defaults:
       run:
         working-directory: packages/cypress-tests
@@ -82,7 +81,6 @@ jobs:
           npx mochawesome-merge "cypress/reports/.jsons/*.json" > mochawesome-merged.json
           npx marge mochawesome-merged.json --reportDir "cypress/reports/html"
 
-      # Note: action inputs still use repo-root paths
       - name: Upload HTML report
         if: always()
         id: upload-report
